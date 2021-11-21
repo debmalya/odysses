@@ -19,7 +19,7 @@ class FileStorageImplTest {
     assertTrue(retrievedRecords.size() == 1);
     assertEquals("09:00-10:00", retrievedRecords.get(0));
   }
-  
+
   @Test
   void testGetFileContent_MultipleLine() {
     MockMultipartFile mockMultipartFile =

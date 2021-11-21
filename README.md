@@ -33,4 +33,3 @@ fix reported issues `mvn spotless:apply` can be used.
 
 `mvn test` should run unit tests. Tests that are not at component/class level i.e. requiring Spring
 container are suffixed with `IT` and are run via `mvn integration-test`.
-
