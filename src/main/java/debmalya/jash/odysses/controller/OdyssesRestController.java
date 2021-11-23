@@ -25,7 +25,7 @@ public class OdyssesRestController {
 	private final PlanSelectorImpl planSelectorImpl;
 
 	@PostMapping(value = "/v0/bestPlan", consumes = { MediaType.MULTIPART_FORM_DATA_VALUE })
-	@Operation(description = "QUESTION 2 - Find the best plan", summary = "Find the combination of plans that offers all selected features at the lowest price.")
+	@Operation(description = "QUESTION 2 - Find the best plan", summary = "Find the combination of plans that offers all requested features at the lowest price.")
 	public ResponseEntity<OdyssesResponse> featureSelection(
 			@RequestPart(name = "planFile", required = true) MultipartFile planFile,
 			@RequestParam(name = "feature", defaultValue = "email,voice,admin", required = true) String feature) {

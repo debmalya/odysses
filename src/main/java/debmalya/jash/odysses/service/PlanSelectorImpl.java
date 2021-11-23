@@ -61,7 +61,6 @@ public class PlanSelectorImpl implements PlanSelector {
 				possibleSolutionList
 						.addAll(getComplimentaryPlans(plan, planDetails.getMissingFeatures(), featurePlanMap, planMap));
 			}else {
-				log.info("LOOK HERE {}",planMap);
 				Set<String> matchedPlan = new HashSet<>();
 				matchedPlan.add(plan);
 				possibleSolutionList.add(new PossibleSolutions(
@@ -164,6 +163,7 @@ public class PlanSelectorImpl implements PlanSelector {
 
 		Set<String> featureSet = new HashSet<>();
 		for (int featureIndex = 2; featureIndex < planDetails.length; featureIndex++) {
+			planDetails[featureIndex] = planDetails[featureIndex].trim().toLowerCase();
 			if (featurePlanMap.containsKey(planDetails[featureIndex])) {
 				Set<String> matchingPlans = featurePlanMap.get(planDetails[featureIndex]);
 				matchingPlans.add(planName);
@@ -193,6 +193,7 @@ public class PlanSelectorImpl implements PlanSelector {
 		String[] allFeatures = features.split(",");
 		featurePlanMap = new HashMap<>(allFeatures.length);
 		for (String eachFeature : allFeatures) {
+			eachFeature = eachFeature.toLowerCase().trim();
 			featurePlanMap.putIfAbsent(eachFeature, new HashSet<>());
 			requiredFeatures.add(eachFeature);
 		}
