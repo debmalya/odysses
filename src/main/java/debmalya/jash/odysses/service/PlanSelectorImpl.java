@@ -25,7 +25,7 @@ public class PlanSelectorImpl implements PlanSelector {
 
 	@Override
 	public String selectPlan(List<String> plans, String features) {
-		log.info("requested plans {} , feature {}", plans, features);
+		log.info("Provided plans {} , requested features {}", plans, features);
 		
 		// features for which calculating best price
 		Set<String> requiredFeatures = new HashSet<>();
@@ -57,9 +57,15 @@ public class PlanSelectorImpl implements PlanSelector {
 		List<PossibleSolutions> possibleSolutionList = new ArrayList<>();
 
 		planMap.forEach((plan, planDetails) -> {
-			if (planDetails.getMissingFeatures() != null || !planDetails.getMissingFeatures().isEmpty()) {
+			if (planDetails.getMissingFeatures() != null && !planDetails.getMissingFeatures().isEmpty()) {
 				possibleSolutionList
 						.addAll(getComplimentaryPlans(plan, planDetails.getMissingFeatures(), featurePlanMap, planMap));
+			}else {
+				log.info("LOOK HERE {}",planMap);
+				Set<String> matchedPlan = new HashSet<>();
+				matchedPlan.add(plan);
+				possibleSolutionList.add(new PossibleSolutions(
+						planMap.get(plan).getPrice(), matchedPlan));
 			}
 		});
 
@@ -103,6 +109,8 @@ public class PlanSelectorImpl implements PlanSelector {
 		missingFeatures.forEach(eachMissingFeature -> {
 			if (featurePlanMap.get(eachMissingFeature) != null) {
 				requiredPlans.addAll(featurePlanMap.get(eachMissingFeature));
+			}else {
+				log.info("Missing {}",eachMissingFeature);
 			}
 		});
 

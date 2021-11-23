@@ -1,7 +1,6 @@
 package debmalya.jash.odysses.service;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -56,6 +55,26 @@ class PlanSelectorImplTest {
 		records.add("PLAN3,125,voice,video");
 		records.add("PLAN4,5,database,admin");
 		assertEquals("280,PLAN2,PLAN3,PLAN4", planSelector.selectPlan(records, "email,voice,admin"));
+	}
+	
+	@Test
+	public void testSelectPlan_TwoPlans() throws IOException {
+		List<String> records = new ArrayList<>();
+		records.add("PLAN1,1000,voice,email");
+		records.add("PLAN2,150,email,database");
+		records.add("PLAN3,125,voice,video");
+		records.add("PLAN4,5,database,admin");
+		assertEquals("130,PLAN3,PLAN4", planSelector.selectPlan(records, "voice,database"));
+	}
+	
+	@Test
+	public void testSelectPlan_OnePlanSolution() throws IOException {
+		List<String> records = new ArrayList<>();
+		records.add("PLAN1,1000,voice,email");
+		records.add("PLAN2,150,email,database");
+		records.add("PLAN3,125,voice,video");
+		records.add("PLAN4,5,database,admin");
+		assertEquals("5,PLAN4", planSelector.selectPlan(records, "database,admin"));
 	}
 	
 

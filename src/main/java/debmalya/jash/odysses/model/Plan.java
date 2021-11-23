@@ -30,6 +30,12 @@ public class Plan {
 	public void setMissingFeatures(Set<String> missingFeatures) {
 		this.missingFeatures = missingFeatures;
 	}
+	@Override
+	public String toString() {
+		return "Plan [price=" + price + ", missingFeatures=" + missingFeatures + "]";
+	}
+	
+	
 	
 
 }
