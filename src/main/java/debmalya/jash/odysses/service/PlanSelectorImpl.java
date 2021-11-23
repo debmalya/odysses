@@ -23,16 +23,19 @@ public class PlanSelectorImpl implements PlanSelector {
 
 	private final FileStorageImpl fileStorageImpl = new FileStorageImpl();
 
-//  features for which calculating best price
-	Set<String> requiredFeatures = new HashSet<>();
-
 	@Override
 	public String selectPlan(List<String> plans, String features) {
-
-		Map<String, Set<String>> featurePlanMap = populateFeatureMap(features);
+		log.info("requested plans {} , feature {}", plans, features);
+		
+		// features for which calculating best price
+		Set<String> requiredFeatures = new HashSet<>();
+		
+		Map<String, Set<String>> featurePlanMap = populateFeatureMap(features, requiredFeatures);
+//		log.info("featurePlanMap {}", featurePlanMap);
 
 //		Key is plan name, value is price, features of that plan.
-		Map<String, Plan> planMap = populatePlanMap(plans, featurePlanMap);
+		Map<String, Plan> planMap = populatePlanMap(plans, featurePlanMap, requiredFeatures);
+//		log.info("planMap {}", planMap);
 
 		return bestPlan(featurePlanMap, planMap);
 	}
@@ -89,7 +92,7 @@ public class PlanSelectorImpl implements PlanSelector {
 	 * @param plan            - original plan
 	 * @param missingFeatures - and the missing features.
 	 * @param featurePlanMap
-	 * @param planMap 
+	 * @param planMap
 	 * @return
 	 */
 	private List<PossibleSolutions> getComplimentaryPlans(String plan, Set<String> missingFeatures,
@@ -132,18 +135,20 @@ public class PlanSelectorImpl implements PlanSelector {
 		return possibleSolutionList;
 	}
 
-	private Map<String, Plan> populatePlanMap(List<String> plans, Map<String, Set<String>> featurePlanMap) {
+	private Map<String, Plan> populatePlanMap(List<String> plans, Map<String, Set<String>> featurePlanMap,
+			Set<String> requiredFeatures) {
 
-		Map<String,Plan> planMap = new HashMap<>();
+		Map<String, Plan> planMap = new HashMap<>();
 		for (String eachPlan : plans) {
-			parseEachPlan(eachPlan, featurePlanMap,planMap);
+			parseEachPlan(eachPlan, featurePlanMap, planMap, requiredFeatures);
 		}
-		
+
 		return planMap;
 
 	}
 
-	private void parseEachPlan(String eachPlan, Map<String, Set<String>> featurePlanMap, Map<String, Plan> planMap) {
+	private void parseEachPlan(String eachPlan, Map<String, Set<String>> featurePlanMap, Map<String, Plan> planMap,
+			Set<String> requiredFeatures) {
 		eachPlan = eachPlan.replace("\r", "");
 		String[] planDetails = eachPlan.split(",");
 		String planName = planDetails[0];
@@ -171,7 +176,7 @@ public class PlanSelectorImpl implements PlanSelector {
 
 	}
 
-	private Map<String, Set<String>> populateFeatureMap(String features) {
+	private Map<String, Set<String>> populateFeatureMap(String features, Set<String> requiredFeatures) {
 
 //		Key is feature, value is the list of plan names where this feature is available.
 //		(e.g. Key is voice value is [PLAN1,PLAN3].

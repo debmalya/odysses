@@ -27,6 +27,7 @@ public class OdyssesRestController {
 	@Operation(description = "QUESTION 2 - Find the best plan", summary = "Find the combination of plans that offers all selected features at the lowest price.")
 	public ResponseEntity<OdyssesResponse> featureSelection(@RequestPart("planFile") MultipartFile planFile,
 			@RequestParam("feature") String feature) {
+		log.info("requested feature {}",feature);
 		return ResponseEntity.ok(planSelectorImpl.processPlans(planFile, feature));
 	}
 

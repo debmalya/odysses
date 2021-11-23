@@ -24,6 +24,8 @@ class PlanSelectorImplTest {
 	public void testSelectPlan_MatchingFeature() throws IOException {
 		List<String> records = fileStorage.getFileContent("./src/test/resources/example1.txt");
 		assertEquals("225,PLAN1,PLAN3", planSelector.selectPlan(records, "email,voice,admin"));
+		assertEquals("225,PLAN1,PLAN3", planSelector.selectPlan(records, "email,voice,admin"));
+		assertEquals("225,PLAN1,PLAN3", planSelector.selectPlan(records, "email,voice,admin"));
 	}
 	
 	@Test
