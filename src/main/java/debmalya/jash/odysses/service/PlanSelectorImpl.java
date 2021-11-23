@@ -1,5 +1,8 @@
 package debmalya.jash.odysses.service;
 
+import debmalya.jash.odysses.model.OdyssesResponse;
+import debmalya.jash.odysses.model.Plan;
+import debmalya.jash.odysses.model.PossibleSolutions;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -8,205 +11,220 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
-import debmalya.jash.odysses.model.OdyssesResponse;
-import debmalya.jash.odysses.model.Plan;
-import debmalya.jash.odysses.model.PossibleSolutions;
-import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
 public class PlanSelectorImpl implements PlanSelector {
 
-	private final FileStorageImpl fileStorageImpl = new FileStorageImpl();
+  private final FileStorageImpl fileStorageImpl = new FileStorageImpl();
 
-	@Override
-	public String selectPlan(List<String> plans, String features) {
-		log.info("Provided plans {} , requested features {}", plans, features);
-		
-		// features for which calculating best price
-		Set<String> requiredFeatures = new HashSet<>();
-		
-		Map<String, Set<String>> featurePlanMap = populateFeatureMap(features, requiredFeatures);
-//		log.info("featurePlanMap {}", featurePlanMap);
+  @Override
+  public String selectPlan(List<String> plans, String features) {
+    log.info("Provided plans {} , requested features {}", plans, features);
 
-//		Key is plan name, value is price, features of that plan.
-		Map<String, Plan> planMap = populatePlanMap(plans, featurePlanMap, requiredFeatures);
-//		log.info("planMap {}", planMap);
+    // features for which calculating best price
+    Set<String> requiredFeatures = new HashSet<>();
 
-		return bestPlan(featurePlanMap, planMap);
-	}
+    Map<String, Set<String>> featurePlanMap = populateFeatureMap(features, requiredFeatures);
+    //		log.info("featurePlanMap {}", featurePlanMap);
 
-	private String bestPlan(Map<String, Set<String>> featurePlanMap, Map<String, Plan> planMap) {
-		boolean isMissingFeature = featurePlanMap.values().stream().filter(featuresSet -> featuresSet.isEmpty())
-				.count() > 0L;
-		if (isMissingFeature) {
-			return "0";
-		}
+    //		Key is plan name, value is price, features of that plan.
+    Map<String, Plan> planMap = populatePlanMap(plans, featurePlanMap, requiredFeatures);
+    //		log.info("planMap {}", planMap);
 
-		return findBestPlan(featurePlanMap, planMap);
-	}
+    return bestPlan(featurePlanMap, planMap);
+  }
 
-	private String findBestPlan(Map<String, Set<String>> featurePlanMap, Map<String, Plan> planMap) {
-		String bestPricePlan = "%d,%s";
-		int minPrice = Integer.MAX_VALUE;
+  private String bestPlan(Map<String, Set<String>> featurePlanMap, Map<String, Plan> planMap) {
+    boolean isMissingFeature =
+        featurePlanMap.values().stream().filter(featuresSet -> featuresSet.isEmpty()).count() > 0L;
+    if (isMissingFeature) {
+      return "0";
+    }
 
-		List<PossibleSolutions> possibleSolutionList = new ArrayList<>();
+    return findBestPlan(featurePlanMap, planMap);
+  }
 
-		planMap.forEach((plan, planDetails) -> {
-			if (planDetails.getMissingFeatures() != null && !planDetails.getMissingFeatures().isEmpty()) {
-				possibleSolutionList
-						.addAll(getComplimentaryPlans(plan, planDetails.getMissingFeatures(), featurePlanMap, planMap));
-			}else {
-				Set<String> matchedPlan = new HashSet<>();
-				matchedPlan.add(plan);
-				possibleSolutionList.add(new PossibleSolutions(
-						planMap.get(plan).getPrice(), matchedPlan));
-			}
-		});
+  private String findBestPlan(Map<String, Set<String>> featurePlanMap, Map<String, Plan> planMap) {
+    String bestPricePlan = "%d,%s";
+    int minPrice = Integer.MAX_VALUE;
 
-		StringBuilder sb = new StringBuilder();
-		if (!possibleSolutionList.isEmpty()) {
-			possibleSolutionList.sort((possibleSolution1, possibleSolution2) -> {
-				return Integer.compare(possibleSolution1.getPrice(), possibleSolution2.getPrice());
-			});
+    List<PossibleSolutions> possibleSolutionList = new ArrayList<>();
 
-			minPrice = possibleSolutionList.get(0).getPrice();
-			String[] plans = possibleSolutionList.get(0).getPlans().toArray(new String[0]);
-			Arrays.sort(plans);
+    planMap.forEach(
+        (plan, planDetails) -> {
+          if (planDetails.getMissingFeatures() != null
+              && !planDetails.getMissingFeatures().isEmpty()) {
+            possibleSolutionList.addAll(
+                getComplimentaryPlans(
+                    plan, planDetails.getMissingFeatures(), featurePlanMap, planMap));
+          } else {
+            Set<String> matchedPlan = new HashSet<>();
+            matchedPlan.add(plan);
+            possibleSolutionList.add(
+                new PossibleSolutions(planMap.get(plan).getPrice(), matchedPlan));
+          }
+        });
 
-			for (int i = 0; i < plans.length; i++) {
-				if (i > 0) {
-					sb.append(",");
-				}
-				sb.append(plans[i]);
-			}
-		} else {
-//			bestPricePlan = planMap.get(sb)
-		}
+    StringBuilder sb = new StringBuilder();
+    if (!possibleSolutionList.isEmpty()) {
+      possibleSolutionList.sort(
+          (possibleSolution1, possibleSolution2) -> {
+            return Integer.compare(possibleSolution1.getPrice(), possibleSolution2.getPrice());
+          });
 
-		return String.format(bestPricePlan, minPrice, sb.toString());
-	}
+      minPrice = possibleSolutionList.get(0).getPrice();
+      String[] plans = possibleSolutionList.get(0).getPlans().toArray(new String[0]);
+      Arrays.sort(plans);
 
-	/**
-	 * Plan combination to make the required features.
-	 * 
-	 * @param plan            - original plan
-	 * @param missingFeatures - and the missing features.
-	 * @param featurePlanMap
-	 * @param planMap
-	 * @return
-	 */
-	private List<PossibleSolutions> getComplimentaryPlans(String plan, Set<String> missingFeatures,
-			Map<String, Set<String>> featurePlanMap, Map<String, Plan> planMap) {
-		List<PossibleSolutions> possibleSolutionList = new ArrayList<>();
+      for (int i = 0; i < plans.length; i++) {
+        if (i > 0) {
+          sb.append(",");
+        }
+        sb.append(plans[i]);
+      }
+    } else {
+      //			bestPricePlan = planMap.get(sb)
+    }
 
-		Set<String> requiredPlans = new HashSet<>();
-		missingFeatures.forEach(eachMissingFeature -> {
-			if (featurePlanMap.get(eachMissingFeature) != null) {
-				requiredPlans.addAll(featurePlanMap.get(eachMissingFeature));
-			}else {
-				log.info("Missing {}",eachMissingFeature);
-			}
-		});
+    return String.format(bestPricePlan, minPrice, sb.toString());
+  }
 
-		Set<String> plans = new HashSet<>();
-		plans.add(plan);
-		AtomicInteger cumulativePrice = new AtomicInteger(planMap.get(plan).getPrice());
-		Set<String> collectedMissingFeatures = new HashSet<>();
+  /**
+   * Plan combination to make the required features.
+   *
+   * @param plan - original plan
+   * @param missingFeatures - and the missing features.
+   * @param featurePlanMap
+   * @param planMap
+   * @return
+   */
+  private List<PossibleSolutions> getComplimentaryPlans(
+      String plan,
+      Set<String> missingFeatures,
+      Map<String, Set<String>> featurePlanMap,
+      Map<String, Plan> planMap) {
+    List<PossibleSolutions> possibleSolutionList = new ArrayList<>();
 
-		requiredPlans.forEach(eachRequired -> {
-			if (missingFeatures.stream().filter(
-					eachMissingFeature -> planMap.get(eachRequired).getMissingFeatures().contains(eachMissingFeature))
-					.count() == 0) {
-				Set<String> matchedPlans = new HashSet<>();
-				matchedPlans.add(plan);
-				matchedPlans.add(eachRequired);
-				PossibleSolutions possibleSolutions = new PossibleSolutions(
-						planMap.get(plan).getPrice() + planMap.get(eachRequired).getPrice(), matchedPlans);
-				possibleSolutionList.add(possibleSolutions);
-			} else {
-				cumulativePrice.addAndGet(planMap.get(eachRequired).getPrice());
-				plans.add(eachRequired);
-				collectedMissingFeatures.addAll(planMap.get(eachRequired).getMissingFeatures());
-				if (collectedMissingFeatures.containsAll(missingFeatures)) {
-					PossibleSolutions possibleSolutions = new PossibleSolutions(cumulativePrice.get(), plans);
-					possibleSolutionList.add(possibleSolutions);
-				}
-			}
-		});
+    Set<String> requiredPlans = new HashSet<>();
+    missingFeatures.forEach(
+        eachMissingFeature -> {
+          if (featurePlanMap.get(eachMissingFeature) != null) {
+            requiredPlans.addAll(featurePlanMap.get(eachMissingFeature));
+          } else {
+            log.info("Missing {}", eachMissingFeature);
+          }
+        });
 
-		return possibleSolutionList;
-	}
+    Set<String> plans = new HashSet<>();
+    plans.add(plan);
+    AtomicInteger cumulativePrice = new AtomicInteger(planMap.get(plan).getPrice());
+    Set<String> collectedMissingFeatures = new HashSet<>();
 
-	private Map<String, Plan> populatePlanMap(List<String> plans, Map<String, Set<String>> featurePlanMap,
-			Set<String> requiredFeatures) {
+    requiredPlans.forEach(
+        eachRequired -> {
+          if (missingFeatures.stream()
+                  .filter(
+                      eachMissingFeature ->
+                          planMap
+                              .get(eachRequired)
+                              .getMissingFeatures()
+                              .contains(eachMissingFeature))
+                  .count()
+              == 0) {
+            Set<String> matchedPlans = new HashSet<>();
+            matchedPlans.add(plan);
+            matchedPlans.add(eachRequired);
+            PossibleSolutions possibleSolutions =
+                new PossibleSolutions(
+                    planMap.get(plan).getPrice() + planMap.get(eachRequired).getPrice(),
+                    matchedPlans);
+            possibleSolutionList.add(possibleSolutions);
+          } else {
+            cumulativePrice.addAndGet(planMap.get(eachRequired).getPrice());
+            plans.add(eachRequired);
+            collectedMissingFeatures.addAll(planMap.get(eachRequired).getMissingFeatures());
+            if (collectedMissingFeatures.containsAll(missingFeatures)) {
+              PossibleSolutions possibleSolutions =
+                  new PossibleSolutions(cumulativePrice.get(), plans);
+              possibleSolutionList.add(possibleSolutions);
+            }
+          }
+        });
 
-		Map<String, Plan> planMap = new HashMap<>();
-		for (String eachPlan : plans) {
-			parseEachPlan(eachPlan, featurePlanMap, planMap, requiredFeatures);
-		}
+    return possibleSolutionList;
+  }
 
-		return planMap;
+  private Map<String, Plan> populatePlanMap(
+      List<String> plans, Map<String, Set<String>> featurePlanMap, Set<String> requiredFeatures) {
 
-	}
+    Map<String, Plan> planMap = new HashMap<>();
+    for (String eachPlan : plans) {
+      parseEachPlan(eachPlan, featurePlanMap, planMap, requiredFeatures);
+    }
 
-	private void parseEachPlan(String eachPlan, Map<String, Set<String>> featurePlanMap, Map<String, Plan> planMap,
-			Set<String> requiredFeatures) {
-		eachPlan = eachPlan.replace("\r", "");
-		String[] planDetails = eachPlan.split(",");
-		String planName = planDetails[0];
-		Integer price = Integer.parseInt(planDetails[1]);
+    return planMap;
+  }
 
-		Set<String> featureSet = new HashSet<>();
-		for (int featureIndex = 2; featureIndex < planDetails.length; featureIndex++) {
-			planDetails[featureIndex] = planDetails[featureIndex].trim().toLowerCase();
-			if (featurePlanMap.containsKey(planDetails[featureIndex])) {
-				Set<String> matchingPlans = featurePlanMap.get(planDetails[featureIndex]);
-				matchingPlans.add(planName);
-				featureSet.add(planDetails[featureIndex]);
-			}
-		}
+  private void parseEachPlan(
+      String eachPlan,
+      Map<String, Set<String>> featurePlanMap,
+      Map<String, Plan> planMap,
+      Set<String> requiredFeatures) {
+    eachPlan = eachPlan.replace("\r", "");
+    String[] planDetails = eachPlan.split(",");
+    String planName = planDetails[0];
+    Integer price = Integer.parseInt(planDetails[1]);
 
-		Plan plan = new Plan();
-		plan.setPrice(price);
-		Set<String> missingFeatures = new HashSet<>();
-		requiredFeatures.forEach(eachRequiredFeature -> {
-			if (!featureSet.contains(eachRequiredFeature)) {
-				missingFeatures.add(eachRequiredFeature);
-			}
-		});
-		plan.setMissingFeatures(missingFeatures);
-		planMap.put(planName, plan);
+    Set<String> featureSet = new HashSet<>();
+    for (int featureIndex = 2; featureIndex < planDetails.length; featureIndex++) {
+      planDetails[featureIndex] = planDetails[featureIndex].trim().toLowerCase();
+      if (featurePlanMap.containsKey(planDetails[featureIndex])) {
+        Set<String> matchingPlans = featurePlanMap.get(planDetails[featureIndex]);
+        matchingPlans.add(planName);
+        featureSet.add(planDetails[featureIndex]);
+      }
+    }
 
-	}
+    Plan plan = new Plan();
+    plan.setPrice(price);
+    Set<String> missingFeatures = new HashSet<>();
+    requiredFeatures.forEach(
+        eachRequiredFeature -> {
+          if (!featureSet.contains(eachRequiredFeature)) {
+            missingFeatures.add(eachRequiredFeature);
+          }
+        });
+    plan.setMissingFeatures(missingFeatures);
+    planMap.put(planName, plan);
+  }
 
-	private Map<String, Set<String>> populateFeatureMap(String features, Set<String> requiredFeatures) {
+  private Map<String, Set<String>> populateFeatureMap(
+      String features, Set<String> requiredFeatures) {
 
-//		Key is feature, value is the list of plan names where this feature is available.
-//		(e.g. Key is voice value is [PLAN1,PLAN3].
-		Map<String, Set<String>> featurePlanMap;
+    //		Key is feature, value is the list of plan names where this feature is available.
+    //		(e.g. Key is voice value is [PLAN1,PLAN3].
+    Map<String, Set<String>> featurePlanMap;
 
-		String[] allFeatures = features.split(",");
-		featurePlanMap = new HashMap<>(allFeatures.length);
-		for (String eachFeature : allFeatures) {
-			eachFeature = eachFeature.toLowerCase().trim();
-			featurePlanMap.putIfAbsent(eachFeature, new HashSet<>());
-			requiredFeatures.add(eachFeature);
-		}
+    String[] allFeatures = features.split(",");
+    featurePlanMap = new HashMap<>(allFeatures.length);
+    for (String eachFeature : allFeatures) {
+      eachFeature = eachFeature.toLowerCase().trim();
+      featurePlanMap.putIfAbsent(eachFeature, new HashSet<>());
+      requiredFeatures.add(eachFeature);
+    }
 
-		return featurePlanMap;
-	}
+    return featurePlanMap;
+  }
 
-	public OdyssesResponse processPlans(MultipartFile planFile, String feature) {
-		OdyssesResponse odyssesResponse = new OdyssesResponse();
-		List<String> records = fileStorageImpl.getFileContent(planFile);
-		odyssesResponse.setResult(selectPlan(records, feature));
-		odyssesResponse.setInputList(records);
-		return odyssesResponse;
-	}
-
+  public OdyssesResponse processPlans(MultipartFile planFile, String feature) {
+    OdyssesResponse odyssesResponse = new OdyssesResponse();
+    List<String> records = fileStorageImpl.getFileContent(planFile);
+    odyssesResponse.setResult(selectPlan(records, feature));
+    odyssesResponse.setInputList(records);
+    return odyssesResponse;
+  }
 }

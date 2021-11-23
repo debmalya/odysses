@@ -11,6 +11,6 @@ public interface FileStorage {
    * @return all the records of file as list of String.
    */
   List<String> getFileContent(MultipartFile multipartFile);
-  
+
   List<String> getFileContent(String fileName) throws IOException;
 }
