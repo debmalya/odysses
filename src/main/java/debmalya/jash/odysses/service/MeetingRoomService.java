@@ -4,5 +4,5 @@ import java.util.List;
 
 public interface MeetingRoomService {
 
-  int getNoOfMeetingRooms(List<String> meetingDetails);
+	int getNoOfMeetingRooms(List<String> meetingDetails);
 }

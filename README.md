@@ -33,3 +33,15 @@ fix reported issues `mvn spotless:apply` can be used.
 
 `mvn test` should run unit tests. Tests that are not at component/class level i.e. requiring Spring
 container are suffixed with `IT` and are run via `mvn integration-test`.
+
+## Coverage
+
+Unit test coverage using Jacoco can be run via `mvn clean test jacoco:report` and report will be
+generated in `target/site/jacoco/index.html`. For integration tests
+run `mvn clean test-compile failsafe:integration-test jacoco:report`.
+
+**Note:** If you want to exclude a class from test report, please add the exclusion in the pom.xml
+for JacocoReport and also add the exclusion to `sonarCoverageExclusions` in the Jenkinsfile.
+
+## Run
+`mvn spring-boot:run `
