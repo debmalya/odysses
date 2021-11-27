@@ -55,7 +55,5 @@ for JacocoReport and also add the exclusion to `sonarCoverageExclusions` in the 
 ## docker image location
 [Docker image](https://hub.docker.com/r/debgtjb/bestplan 'best plan')
 
-### Components
-[Components](doc/BestPlan.jpg "Components)
 
 #### [Wiki Page](https://github.com/debmalya/odysses/wiki "Wiki Page") added
