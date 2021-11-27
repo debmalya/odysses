@@ -85,4 +85,14 @@ class PlanSelectorImplTest {
     records.add("PLAN4,5,database,admin");
     assertEquals("5,PLAN4", planSelector.selectPlan(records, "database, admin"));
   }
+
+  @Test
+  public void testSelectPlan_AllFeatures() throws IOException {
+    List<String> records = new ArrayList<>();
+    records.add("PLAN1,100,voice,email");
+    records.add("PLAN2,150,email,database,admin");
+    records.add("PLAN3,125,voice,admin");
+    records.add("PLAN4,135,database,admin");
+    assertEquals("235,PLAN1,PLAN4", planSelector.selectPlan(records, "email,voice,admin,database"));
+  }
 }

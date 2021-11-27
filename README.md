@@ -44,15 +44,4 @@ run `mvn clean test-compile failsafe:integration-test jacoco:report`.
 for JacocoReport and also add the exclusion to `sonarCoverageExclusions` in the Jenkinsfile.
 
 ## Run
-`mvn spring-boot:run`
-
-## How to create docker image
-* Creating docker image
-`mvn install`
-`docker build -t debgtjb/bestplan .`
-`docker run -p 8080:8080 debgtjb/bestplan`
-
-## docker image location
-[Docker image](https://hub.docker.com/r/debgtjb/bestplan 'best plan')
-
-#### [Wiki Page](https://github.com/debmalya/odysses/wiki "Wiki Page") added
+`mvn spring-boot:run `
