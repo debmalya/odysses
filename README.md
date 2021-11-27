@@ -57,3 +57,6 @@ for JacocoReport and also add the exclusion to `sonarCoverageExclusions` in the 
 
 
 #### [Wiki Page](https://github.com/debmalya/odysses/wiki "Wiki Page") added
+
+#### Components
+![Components](doc/BestPlan.jpg "Components")
