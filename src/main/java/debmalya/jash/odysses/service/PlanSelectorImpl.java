@@ -78,16 +78,7 @@ public class PlanSelectorImpl implements PlanSelector {
 
       minPrice = possibleSolutionList.get(0).getPrice();
       String[] plans = possibleSolutionList.get(0).getPlans().toArray(new String[0]);
-      Arrays.sort(plans);
-
-      for (int i = 0; i < plans.length; i++) {
-        if (i > 0) {
-          sb.append(",");
-        }
-        sb.append(plans[i]);
-      }
-    } else {
-      //			bestPricePlan = planMap.get(sb)
+      getBestPlanName(sb, plans);
     }
 
     return String.format(bestPricePlan, minPrice, sb.toString());
@@ -109,11 +100,11 @@ public class PlanSelectorImpl implements PlanSelector {
       Map<String, Plan> planMap) {
     List<PossibleSolutions> possibleSolutionList = new ArrayList<>();
 
-    Set<String> requiredPlans = new HashSet<>();
+    Set<String> complimentaryPlans = new HashSet<>();
     missingFeatures.forEach(
         eachMissingFeature -> {
           if (featurePlanMap.get(eachMissingFeature) != null) {
-            requiredPlans.addAll(featurePlanMap.get(eachMissingFeature));
+            complimentaryPlans.addAll(featurePlanMap.get(eachMissingFeature));
           } else {
             log.info("Missing {}", eachMissingFeature);
           }
@@ -124,7 +115,7 @@ public class PlanSelectorImpl implements PlanSelector {
     AtomicInteger cumulativePrice = new AtomicInteger(planMap.get(plan).getPrice());
     Set<String> collectedMissingFeatures = new HashSet<>();
 
-    requiredPlans.forEach(
+    complimentaryPlans.forEach(
         eachRequired -> {
           if (missingFeatures.stream()
                   .filter(
@@ -226,5 +217,16 @@ public class PlanSelectorImpl implements PlanSelector {
     odyssesResponse.setResult(selectPlan(records, feature));
     odyssesResponse.setInputList(records);
     return odyssesResponse;
+  }
+
+  private void getBestPlanName(StringBuilder sb, String[] plans) {
+    Arrays.sort(plans);
+
+    for (int i = 0; i < plans.length; i++) {
+      if (i > 0) {
+        sb.append(",");
+      }
+      sb.append(plans[i]);
+    }
   }
 }
